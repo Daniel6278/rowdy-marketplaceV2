@@ -43,7 +43,6 @@ const HomePage = () => {
         }}
       >
         {/* Dark overlay for better text visibility */}
-        <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg"></div>
         
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <h1 className="text-4xl font-bold mb-4 text-white">Welcome to Rowdy Marketplace</h1>
@@ -51,7 +50,7 @@ const HomePage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
               to="/products" 
-              className="btn bg-white text-utsa-blue hover:bg-gray-100"
+              className="btn bg-white text-utsa-blue hover:bg-utsa-blue hover:text-white"
             >
               Browse Products
             </Link>
@@ -110,7 +109,7 @@ const HomePage = () => {
       </div>
       
       {/* CTA */}
-      <div className="bg-gray-100 rounded-lg p-8 text-center">
+      <div className="bg-white rounded-lg p-8 text-center">
         <h2 className="text-2xl font-bold mb-4 text-utsa-blue">Ready to Get Started?</h2>
         <p className="mb-6">Join the UTSA community marketplace today.</p>
         <Link 

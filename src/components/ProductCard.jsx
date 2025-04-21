@@ -54,7 +54,7 @@ const ProductCard = ({ product }) => {
           </p>
           
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded-full text-gray-700">
+            <span className="text-xs bg-white px-2 py-1 rounded-full text-black">
               {product.condition}
             </span>
             <span className="text-xs text-light-gray">

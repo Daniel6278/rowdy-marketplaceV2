@@ -98,7 +98,7 @@ const ForumPage = () => {
                     </svg>
                   </span>
                 </summary>
-                <div className="p-4 pt-0 text-gray-700">
+                <div className="p-4 pt-0 text-black">
                   <p>{faq.answer}</p>
                   <p className="mt-2 text-sm" style={{ color: utsaColors.orange }}>
                     Answered by: {faq.answeredBy} | Category: {faq.category}

@@ -94,7 +94,7 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen flex flex-col bg-light-gray">
+      <div className="min-h-screen flex flex-col bg-white">
         <Toaster position="top-right" />
         <Layout>
           <Routes>

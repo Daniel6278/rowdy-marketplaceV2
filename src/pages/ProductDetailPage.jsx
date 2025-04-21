@@ -106,14 +106,14 @@ const ProductDetailPage = () => {
             
             <div className="flex items-center mb-4">
               <span className="text-2xl font-bold text-utsa-blue">${parseFloat(product.price).toFixed(2)}</span>
-              <span className="ml-3 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">
+              <span className="ml-3 px-3 py-1 bg-white text-black rounded-full text-sm">
                 {product.condition}
               </span>
             </div>
             
             <div className="mb-6">
               <h2 className="text-lg font-semibold mb-2">Description</h2>
-              <p className="text-gray-700">{product.description}</p>
+              <p className="text-black">{product.description}</p>
             </div>
             
             <div className="mb-6">

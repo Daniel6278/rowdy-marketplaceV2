@@ -192,7 +192,7 @@ const ProductsPage = () => {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg shadow">
               <h3 className="text-xl font-medium mb-2">No Products Found</h3>
-              <p className="text-light-gray">
+              <p className="text-black">
                 Try adjusting your filters or search query
               </p>
             </div>

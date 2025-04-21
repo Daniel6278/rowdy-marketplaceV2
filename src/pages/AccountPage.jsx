@@ -320,8 +320,8 @@ const AccountPage = () => {
         {/* User Info */}
         <div className="p-6 bg-utsa-blue text-white">
           <h2 className="text-2xl font-semibold">{user.name}</h2>
-          <p className="text-gray-200">{user.email}</p>
-          <p className="text-gray-200 text-sm mt-1">
+          <p className="text-white">{user.email}</p>
+          <p className="text-white text-sm mt-1">
             Account created: {new Date(user.createdAt).toLocaleDateString()}
           </p>
         </div>
@@ -515,7 +515,7 @@ const AccountPage = () => {
                     </button>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-black mt-2">
                   {activeOrdersType === 'purchases' 
                     ? 'Items you have purchased from other users' 
                     : 'Items you have sold to other users'}
@@ -533,7 +533,7 @@ const AccountPage = () => {
               </div>
               
               {filteredOrders.length === 0 ? (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                <div className="text-center py-8 bg-white rounded-lg">
                   <p className="mb-4">
                     {activeOrdersType === 'purchases' 
                       ? "You haven't purchased any items yet." 
@@ -553,7 +553,7 @@ const AccountPage = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-gray-50">
+                      <tr className="bg-white">
                         <th className="px-4 py-3 text-left text-xs font-medium text-light-gray uppercase tracking-wider">
                           Product
                         </th>
@@ -576,7 +576,7 @@ const AccountPage = () => {
                     </thead>
                     <tbody>
                       {filteredOrders.map(order => (
-                        <tr key={order.id} className="border-t hover:bg-gray-50">
+                        <tr key={order.id} className="border-t hover:bg-white">
                           <td className="px-4 py-4">
                             <div className="flex items-center">
                               {order.productImage && (
@@ -590,13 +590,13 @@ const AccountPage = () => {
                               )}
                               <div>
                                 <p className="font-medium">{order.productTitle}</p>
-                                <p className="text-sm text-light-gray">
+                                <p className="text-sm text-black">
                                   {activeOrdersType === 'purchases' 
                                     ? `Seller: ${order.sellerName}` 
                                     : `Buyer: ${order.buyerName}`}
                                 </p>
                                 {order.category && (
-                                  <p className="text-xs text-light-gray mt-1">
+                                  <p className="text-xs text-black mt-1">
                                     {order.category} | {order.condition}
                                   </p>
                                 )}
@@ -616,7 +616,7 @@ const AccountPage = () => {
                                   ? order.sellerName 
                                   : order.buyerName}
                               </p>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-black">
                                 Contact: <a 
                                   href={`mailto:${activeOrdersType === 'purchases' 
                                     ? (order.sellerEmail || user.email) 
@@ -663,7 +663,7 @@ const AccountPage = () => {
                             )}
                             
                             {order.status === 'completed' && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-black">
                                 {activeOrdersType === 'purchases' 
                                   ? 'Purchase completed' 
                                   : 'Sale completed'}
@@ -671,7 +671,7 @@ const AccountPage = () => {
                             )}
                             
                             {order.status === 'canceled' && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-black">
                                 Order canceled
                               </span>
                             )}
