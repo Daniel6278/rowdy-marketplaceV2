@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Rowdy Marketplace
 
 A marketplace app for UTSA students to buy and sell items within the campus community.
@@ -106,3 +107,6 @@ This project is MIT licensed.
 ## Disclaimer
 
 This application is for educational and testing purposes only. It uses localStorage for data persistence, which is not secure for real user data. In a production environment, a proper backend and database would be necessary. 
+=======
+# rowdy-marketplaceV2
+>>>>>>> 88b26f1785f02518b62f9ef9b172da6674c6e38e
