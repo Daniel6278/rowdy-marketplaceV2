@@ -30,22 +30,22 @@ const parseCSV = (csv) => {
 };
 
 // Save data to CSV in localStorage
-export const saveData = (key, data) => {
+const saveData = (key, data) => {
   const csv = convertToCSV(data);
   localStorage.setItem(`csv_${key}`, csv);
   return data;
 };
 
 // Load data from CSV in localStorage
-export const loadData = (key, defaultData = []) => {
+const loadData = (key, defaultData = []) => {
   const csv = localStorage.getItem(`csv_${key}`);
   return csv ? parseCSV(csv) : defaultData;
 };
 
 // Products operations
-export const getProducts = () => loadData('products', []);
-export const saveProducts = (products) => saveData('products', products);
-export const addProduct = (product) => {
+const getProducts = () => loadData('products', []);
+const saveProducts = (products) => saveData('products', products);
+const addProduct = (product) => {
   const products = getProducts();
   const newProduct = { 
     ...product, 
@@ -56,7 +56,7 @@ export const addProduct = (product) => {
   return newProduct;
 };
 
-export const updateProduct = (product) => {
+const updateProduct = (product) => {
   const products = getProducts();
   const productIndex = products.findIndex(p => p.id === product.id);
   
@@ -77,27 +77,30 @@ export const updateProduct = (product) => {
   return updatedProduct;
 };
 
-export const removeProduct = (productId) => {
+const removeProduct = (productId) => {
   const products = getProducts();
-  const filteredProducts = products.filter(product => product.id !== productId);
+  console.log(`Removing product ${productId} from products list`, products);
+  const stringProductId = String(productId);
+  const filteredProducts = products.filter(product => String(product.id) !== stringProductId);
+  console.log(`After filtering, remaining products:`, filteredProducts);
   saveProducts(filteredProducts);
   return filteredProducts;
 };
 
 // Users operations
-export const getUsers = () => loadData('users', []);
-export const saveUsers = (users) => saveData('users', users);
-export const findUserByEmail = (email) => {
+const getUsers = () => loadData('users', []);
+const saveUsers = (users) => saveData('users', users);
+const findUserByEmail = (email) => {
   const users = getUsers();
   return users.find(user => user.email === email);
 };
 
-export const findUserById = (id) => {
+const findUserById = (id) => {
   const users = getUsers();
   return users.find(user => user.id === id);
 };
 
-export const addUser = (user) => {
+const addUser = (user) => {
   const users = getUsers();
   const newUser = { 
     ...user, 
@@ -108,7 +111,7 @@ export const addUser = (user) => {
   return newUser;
 };
 
-export const updateUser = (userId, updatedData) => {
+const updateUser = (userId, updatedData) => {
   const users = getUsers();
   const userIndex = users.findIndex(user => user.id === userId);
   
@@ -132,25 +135,57 @@ export const updateUser = (userId, updatedData) => {
 };
 
 // Orders operations
-export const getOrders = () => loadData('orders', []);
-export const saveOrders = (orders) => saveData('orders', orders);
+const getOrders = () => {
+  const orders = loadData('orders', []);
+  console.log('Getting all orders from localStorage:', orders);
+  return orders;
+};
+
+const saveOrders = (orders) => {
+  console.log('Saving orders to localStorage:', orders);
+  return saveData('orders', orders);
+};
+
 export const addOrder = (order) => {
+  console.log('Adding new order:', order);
   const orders = getOrders();
+  console.log('Current orders before adding:', orders);
+  
+  // Ensure seller and buyer IDs are strings
+  if (order.buyerId) {
+    order.buyerId = String(order.buyerId);
+  }
+  if (order.sellerId) {
+    order.sellerId = String(order.sellerId);
+  }
+  
   const newOrder = { 
     ...order, 
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
     status: order.status || 'pending'
   };
-  saveOrders([...orders, newOrder]);
+  
+  const updatedOrders = [...orders, newOrder];
+  console.log('Updated orders after adding:', updatedOrders);
+  
+  saveOrders(updatedOrders);
+  console.log('Order saved successfully:', newOrder);
+  
   return newOrder;
 };
 
-export const updateOrderStatus = (orderId, status) => {
+const updateOrderStatus = (orderId, status) => {
+  console.log(`Updating order ${orderId} status to ${status}`);
   const orders = getOrders();
-  const orderIndex = orders.findIndex(order => order.id === orderId);
+  
+  // Convert to string for consistent comparison
+  const stringOrderId = String(orderId);
+  
+  const orderIndex = orders.findIndex(order => String(order.id) === stringOrderId);
   
   if (orderIndex === -1) {
+    console.error(`Order not found: ${orderId}`);
     throw new Error('Order not found');
   }
   
@@ -162,20 +197,37 @@ export const updateOrderStatus = (orderId, status) => {
   
   orders[orderIndex] = updatedOrder;
   saveOrders(orders);
+  console.log(`Order ${orderId} updated successfully:`, updatedOrder);
   
   // If order is marked as completed, remove the product from available products
   if (status === 'completed') {
     const productId = updatedOrder.productId;
     if (productId) {
-      removeProduct(productId);
+      console.log(`Removing product ${productId} as order is completed`);
+      try {
+        // First get the product to verify it exists
+        const products = getProducts();
+        const productExists = products.some(product => String(product.id) === String(productId));
+        
+        if (productExists) {
+          removeProduct(productId);
+          console.log(`Product ${productId} removed successfully`);
+        } else {
+          console.warn(`Product ${productId} was not found in the products list`);
+        }
+      } catch (error) {
+        console.error(`Error removing product ${productId}:`, error);
+      }
+    } else {
+      console.warn('Cannot remove product: Order does not have a productId');
     }
   }
   
   return updatedOrder;
 };
 
-// Export the service functions
-export default {
+// Export the service functions as a default object
+const csvService = {
   saveData,
   loadData,
   getProducts,
@@ -193,4 +245,6 @@ export default {
   saveOrders,
   addOrder,
   updateOrderStatus
-}; 
+};
+
+export default csvService;

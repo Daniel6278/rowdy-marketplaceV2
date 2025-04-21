@@ -18,6 +18,14 @@ const useStore = create(
       // Cart state
       cart: [],
       addToCart: (product) => {
+        console.log('Store addToCart called with:', product);
+        
+        // Validate product has seller information
+        if (!product.sellerId || !product.sellerName) {
+          console.error('Product missing seller information:', product);
+          return;
+        }
+        
         const cart = get().cart;
         const itemExists = cart.find(item => item.id === product.id);
         
@@ -28,6 +36,7 @@ const useStore = create(
         }
         
         // Add new item to cart (always quantity of 1)
+        console.log('Adding product to cart:', product);
         set({ cart: [...cart, { ...product }] });
       },
       removeFromCart: (productId) => {
@@ -37,7 +46,13 @@ const useStore = create(
       
       // Orders state
       orders: [],
-      addOrder: (order) => set({ orders: [...get().orders, order] }),
+      addOrder: (order) => {
+        console.log('Adding order to store:', order);
+        const currentOrders = get().orders;
+        console.log('Current orders in store:', currentOrders);
+        set({ orders: [...currentOrders, order] });
+        console.log('Updated store orders:', [...currentOrders, order]);
+      },
       
       // Product listings (for sellers)
       listings: [],

@@ -42,23 +42,41 @@ const AccountPage = () => {
       if (!user) return;
       
       setIsLoading(true);
+      console.log('Loading user data for:', user);
+      
       try {
         // Load orders
         const allOrders = await csvService.getOrders();
+        console.log('All orders loaded:', allOrders);
         
         // Filter orders where user is buyer or seller
-        const userOrders = allOrders.filter(
-          order => order.buyerId === user.id || order.sellerId === user.id
+        // Using String() to ensure consistent type comparison
+        const userOrdersAsBuyer = allOrders.filter(
+          order => String(order.buyerId) === String(user.id)
         );
         
-        setOrders(userOrders);
+        const userOrdersAsSeller = allOrders.filter(
+          order => String(order.sellerId) === String(user.id)
+        );
+        
+        const combinedUserOrders = [...userOrdersAsBuyer, ...userOrdersAsSeller];
+        
+        console.log('Filtered orders for user:', { 
+          userId: user.id, 
+          totalUserOrders: combinedUserOrders.length,
+          asBuyer: userOrdersAsBuyer.length,
+          asSeller: userOrdersAsSeller.length,
+          sellerOrders: userOrdersAsSeller
+        });
+        
+        setOrders(combinedUserOrders);
         
         // Load products
         const allProducts = await csvService.getProducts();
         
         // Filter products where user is seller
         const userListings = allProducts.filter(
-          product => product.sellerId === user.id
+          product => String(product.sellerId) === String(user.id)
         );
         
         setListings(userListings);
@@ -72,25 +90,6 @@ const AccountPage = () => {
     
     loadUserData();
   }, [user]);
-  
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    try {
-      // Update order status in CSV/localStorage
-      const updatedOrder = csvService.updateOrderStatus(orderId, newStatus);
-      
-      // Update local state
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId ? { ...order, status: newStatus } : order
-        )
-      );
-      
-      toast.success(`Order status updated to ${newStatus}`);
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      toast.error('Failed to update order status');
-    }
-  };
   
   // Handle profile form changes
   const handleProfileChange = (e) => {
@@ -106,6 +105,48 @@ const AccountPage = () => {
         ...profileErrors,
         [name]: null
       });
+    }
+  };
+  
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      // Update order status in CSV/localStorage
+      const updatedOrder = await csvService.updateOrderStatus(orderId, newStatus);
+      
+      // Update local state
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+      
+      // If order was completed, check if the product needs to be removed from listings
+      if (newStatus === 'completed') {
+        // Update local listings state to remove the sold product
+        const productId = updatedOrder.productId;
+        if (productId) {
+          setListings(prevListings => 
+            prevListings.filter(listing => listing.id !== productId)
+          );
+          
+          // If the product isn't being removed from the store, force a reload of listings
+          setTimeout(() => {
+            const loadListings = async () => {
+              const allProducts = await csvService.getProducts();
+              const userListings = allProducts.filter(
+                product => product.sellerId === user.id
+              );
+              setListings(userListings);
+            };
+            loadListings();
+          }, 500);
+        }
+      }
+      
+      toast.success(`Order status updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
     }
   };
   
@@ -220,10 +261,24 @@ const AccountPage = () => {
   // Filter orders based on selected type
   const filteredOrders = orders.filter(order => {
     if (activeOrdersType === 'purchases') {
-      return order.buyerId === user?.id;
-    } else {
-      return order.sellerId === user?.id;
+      return String(order.buyerId) === String(user?.id);
+    } else if (activeOrdersType === 'sales') {
+      return String(order.sellerId) === String(user?.id);
     }
+    return false;
+  });
+  
+  // Add debug info for orders
+  const buyerOrdersCount = orders.filter(order => String(order.buyerId) === String(user?.id)).length;
+  const sellerOrdersCount = orders.filter(order => String(order.sellerId) === String(user?.id)).length;
+  
+  console.log('Displaying filtered orders:', { 
+    activeOrdersType,
+    userId: user?.id, 
+    filteredOrders,
+    ordersLength: orders.length,
+    buyerOrdersCount,
+    sellerOrdersCount
   });
   
   // If not authenticated, redirect to login
@@ -234,6 +289,32 @@ const AccountPage = () => {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-8">My Account</h1>
+      
+      {/* Debug Information - Only visible in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-6 p-4 bg-yellow-100 rounded-lg text-sm">
+          <h3 className="font-bold mb-2">Debug Information</h3>
+          <p>User ID: {user?.id}</p>
+          <p>Orders in state: {orders.length}</p>
+          <p>Orders as buyer: {buyerOrdersCount}</p>
+          <p>Orders as seller: {sellerOrdersCount}</p>
+          <p>Currently viewing: {activeOrdersType}</p>
+          <div className="mt-2">
+            <button 
+              onClick={() => setActiveOrdersType('purchases')}
+              className="bg-blue-500 text-white px-2 py-1 text-xs rounded mr-2"
+            >
+              Show Purchases
+            </button>
+            <button 
+              onClick={() => setActiveOrdersType('sales')}
+              className="bg-green-500 text-white px-2 py-1 text-xs rounded"
+            >
+              Show Sales
+            </button>
+          </div>
+        </div>
+      )}
       
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {/* User Info */}
@@ -413,20 +494,20 @@ const AccountPage = () => {
                   </h3>
                   <div className="flex gap-4">
                     <button
-                      className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                      className={`px-4 py-2 text-sm rounded-full transition-colors font-semibold ${
                         activeOrdersType === 'purchases'
                           ? 'bg-utsa-blue text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                       onClick={() => setActiveOrdersType('purchases')}
                     >
                       My Purchases
                     </button>
                     <button
-                      className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                      className={`px-4 py-2 text-sm rounded-full transition-colors font-semibold ${
                         activeOrdersType === 'sales'
-                          ? 'bg-utsa-blue text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-utsa-orange text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                       onClick={() => setActiveOrdersType('sales')}
                     >
@@ -439,6 +520,16 @@ const AccountPage = () => {
                     ? 'Items you have purchased from other users' 
                     : 'Items you have sold to other users'}
                 </p>
+                
+                {/* Show seller specific instructions */}
+                {activeOrdersType === 'sales' && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                    <p className="text-blue-700">
+                      <strong>Seller Instructions:</strong> You need to confirm orders from buyers 
+                      to complete the sale. Look for the "Mark Completed" button on pending orders.
+                    </p>
+                  </div>
+                )}
               </div>
               
               {filteredOrders.length === 0 ? (
@@ -643,4 +734,4 @@ const AccountPage = () => {
   );
 };
 
-export default AccountPage; 
+export default AccountPage;

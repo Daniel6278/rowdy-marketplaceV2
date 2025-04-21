@@ -54,6 +54,7 @@ const CartPage = () => {
     }
     
     setIsCheckingOut(true);
+    console.log('Starting checkout process...', { cart, user });
     
     try {
       // Create an order for each item in the cart
@@ -61,11 +62,27 @@ const CartPage = () => {
         // Find seller's email address for contact info
         const sellerInfo = await csvService.findUserById(item.sellerId);
         const sellerEmail = sellerInfo ? sellerInfo.email : 'Email not available';
+        console.log('Found seller info:', { sellerInfo, sellerId: item.sellerId });
+        
+        // Ensure we have seller information
+        if (!item.sellerId || !item.sellerName) {
+          console.error('Missing seller information for item:', item);
+          toast.error(`Missing seller information for ${item.title}`);
+          continue;
+        }
         
         // Calculate item price with tax
         const itemPrice = parseFloat(item.price);
         const itemTax = itemPrice * taxRate;
         const itemTotal = itemPrice + itemTax;
+        
+        // Log the exact types and values of IDs
+        console.log('ID information for new order:', {
+          buyerId: user.id,
+          buyerIdType: typeof user.id,
+          sellerId: item.sellerId,
+          sellerIdType: typeof item.sellerId
+        });
         
         const order = {
           productId: item.id, 
@@ -74,10 +91,10 @@ const CartPage = () => {
           quantity: 1,
           tax: itemTax,
           subtotal: itemPrice,
-          buyerId: user.id,
+          buyerId: String(user.id), // Ensure consistent string type
           buyerName: user.name,
           buyerEmail: user.email,
-          sellerId: item.sellerId,
+          sellerId: String(item.sellerId), // Ensure consistent string type
           sellerName: item.sellerName,
           sellerEmail: sellerEmail,
           status: 'pending',
@@ -86,15 +103,20 @@ const CartPage = () => {
           condition: item.condition
         };
         
+        console.log('Creating order:', order);
+        
         // Save order to CSV/localStorage
         const savedOrder = await csvService.addOrder(order);
+        console.log('Order saved to CSV/localStorage:', savedOrder);
         
         // Add to Zustand store
         addOrder(savedOrder);
+        console.log('Order added to store');
       }
       
       // Clear the cart
       clearCart();
+      console.log('Cart cleared');
       
       toast.success('Order placed successfully!');
       navigate('/account');

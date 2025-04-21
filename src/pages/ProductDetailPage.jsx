@@ -37,6 +37,19 @@ const ProductDetailPage = () => {
   }, [id]);
   
   const handleAddToCart = () => {
+    console.log('Adding product to cart with seller info:', {
+      product,
+      sellerId: product.sellerId,
+      sellerName: product.sellerName
+    });
+    
+    // Verify product has seller information before adding to cart
+    if (!product.sellerId || !product.sellerName) {
+      console.error('Product missing seller information:', product);
+      toast.error('Unable to add to cart: Missing seller information');
+      return;
+    }
+    
     addToCart(product);
     toast.success(`Added ${product.title} to cart!`);
   };

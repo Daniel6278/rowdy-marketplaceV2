@@ -6,62 +6,123 @@ import csvService from '../services/csvService';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useStore();
+  const { login, addOrder } = useStore();
   
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
   
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear error when user types
-    if (error) setError('');
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+    
+    // Clear errors for this field
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: null
+      });
+    }
+  };
+  
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const loadUserOrders = async (userId) => {
+    try {
+      console.log('Loading orders for user after login:', userId);
+      const allOrders = await csvService.getOrders();
+      
+      // Find orders where the user is either buyer or seller
+      const userOrders = allOrders.filter(
+        order => String(order.buyerId) === String(userId) || String(order.sellerId) === String(userId)
+      );
+      
+      console.log('Found user orders:', userOrders);
+      console.log('Detailed user order check:', {
+        userId: userId,
+        userIdType: typeof userId,
+        orderCount: allOrders.length,
+        foundOrderCount: userOrders.length,
+        // Show first order buyerId and sellerId if exists for debugging
+        sampleOrder: allOrders.length > 0 ? {
+          buyerId: allOrders[0].buyerId,
+          buyerIdType: typeof allOrders[0].buyerId,
+          sellerId: allOrders[0].sellerId,
+          sellerIdType: typeof allOrders[0].sellerId
+        } : null
+      });
+      
+      // Add each order to the store
+      userOrders.forEach(order => {
+        console.log('Adding order to store:', order);
+        addOrder(order);
+      });
+      
+    } catch (error) {
+      console.error('Error loading user orders:', error);
+    }
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
     
-    const { email, password } = formData;
-    
-    // Simple validation
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      setIsLoading(false);
+    if (!validate()) {
       return;
     }
     
+    setIsSubmitting(true);
+    
     try {
-      // Find user with matching email
-      const foundUser = csvService.findUserByEmail(email);
+      // Find user by email
+      const user = csvService.findUserByEmail(formData.email);
       
-      if (!foundUser) {
-        setError('User not found');
-        setIsLoading(false);
+      if (!user) {
+        setErrors({
+          email: 'No account found with this email'
+        });
         return;
       }
       
-      // Check password (in a real app, you would use proper password hashing)
-      if (foundUser.password !== password) {
-        setError('Invalid password');
-        setIsLoading(false);
+      // Check password
+      if (user.password !== formData.password) {
+        setErrors({
+          password: 'Incorrect password'
+        });
         return;
       }
       
       // Login successful
-      login(foundUser);
+      login(user);
+      
+      // Load user's orders
+      await loadUserOrders(user.id);
+      
       toast.success('Logged in successfully!');
       navigate('/');
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('An error occurred during login');
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('An error occurred during login');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
   
@@ -70,11 +131,11 @@ const LoginPage = () => {
       <h1 className="text-3xl font-bold mb-6 text-center">Sign In</h1>
       
       <div className="bg-white rounded-lg shadow p-6">
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-error rounded">
-            {error}
+        {Object.keys(errors).map((key) => (
+          <div key={key} className="mb-4 p-3 bg-red-100 text-error rounded">
+            {errors[key]}
           </div>
-        )}
+        ))}
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -112,9 +173,9 @@ const LoginPage = () => {
           <button
             type="submit"
             className="btn btn-primary w-full"
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
         
