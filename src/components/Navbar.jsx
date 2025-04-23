@@ -19,7 +19,7 @@ const Navbar = () => {
     <nav className="bg-utsa-blue text-white py-3 shadow-md">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center">
-          <div className="mr-3 flex-shrink-0">
+          <div className="mr-3 flex-shrink-0 bg-utsa-orange bg-opacity-80 rounded-full p-1">
             <img src={logo} alt="Rowdy Marketplace Logo" className="h-12 w-auto" />
           </div>
           <Link to="/" className="text-2xl font-bold text-utsa-orange hover:text-white transition-colors">
