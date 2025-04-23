@@ -29,37 +29,6 @@ function App() {
     updateExistingOrdersWithEmails();
   }, []);
 
-  useEffect(() => {
-    const syncProductsWithOrders = async () => {
-      console.log('Syncing products with completed orders');
-      try {
-        // Get all orders
-        const allOrders = await csvService.getOrders();
-        const completedOrders = allOrders.filter(order => order.status === 'completed');
-        
-        // Get all products
-        const allProducts = await csvService.getProducts();
-        
-        // Check if any completed order products still exist in the products list
-        for (const order of completedOrders) {
-          if (!order.productId) continue;
-          
-          const productExists = allProducts.some(
-            product => String(product.id) === String(order.productId)
-          );
-          
-          if (productExists) {
-            console.log(`Removing product ${order.productId} that should have been removed (completed order)`);
-            await csvService.removeProduct(order.productId);
-          }
-        }
-      } catch (error) {
-        console.error('Error syncing products with orders:', error);
-      }
-    };
-    
-    syncProductsWithOrders();
-  }, []);
   // Initialize orders from localStorage when app starts
   useEffect(() => {
     const loadInitialOrders = async () => {

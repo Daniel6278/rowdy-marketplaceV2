@@ -154,8 +154,29 @@ export const orders = [
   }
 ];
 
+// Sample discounts data
+export const discounts = [
+  {
+    id: "1",
+    code: "SPRING10",
+    amount: 10, // as percent
+    type: "percent",// support both types
+    active: true,
+    createdAt: "2024-04-22T12:00:00Z"
+  },
+  {
+    id: '2',
+    code: 'FREESHIP',
+    amount: 5.00, // flat amount
+    type: 'fixed',
+    active: true,
+    createdAt: "2024-04-22T12:00:00Z"
+  }
+];
+
 // Export all sample data
 export default {
+  discounts,
   categories,
   products,
   users,

@@ -3,31 +3,26 @@ import sampleData from '../data/sampleData';
 
 // Initialize the app with sample data if none exists
 export const initializeAppData = () => {
-  // Check if data already exists in localStorage
-  const existingProducts = csvService.getProducts();
-  const existingUsers = csvService.getUsers();
-  const existingOrders = csvService.getOrders();
-  
-  // If no products exist, initialize with sample data
-  if (existingProducts.length === 0) {
-    console.log('Initializing sample products data...');
-    csvService.saveProducts(sampleData.products);
+
+  const initialized = localStorage.getItem('hasInitialized');
+  if (initialized === 'true') {
+    console.log('[init] Skipping init — already initialized');
+    return;
   }
-  
-  // If no users exist, initialize with sample data
-  if (existingUsers.length === 0) {
-    console.log('Initializing sample users data...');
-    csvService.saveUsers(sampleData.users);
-  }
-  
-  // If no orders exist, initialize with sample data
-  if (existingOrders.length === 0) {
-    console.log('Initializing sample orders data...');
-    csvService.saveOrders(sampleData.orders);
-  }
-  
+    // Check if products, users, and orders already exist
+    if (!csvService.getDiscounts().length) {
+      console.log('[init] Adding sample discounts...');
+      csvService.saveDiscounts(sampleData.discounts);
+    }
+  console.log('🔧 Initializing sample data...');
+  // Save sample data if not already present
+  csvService.saveProducts(sampleData.products);
+  csvService.saveUsers(sampleData.users);
+  csvService.saveOrders(sampleData.orders);
   // Update any existing orders to include email information
   updateExistingOrdersWithEmails();
+  // Mark as initialized
+  localStorage.setItem('hasInitialized', 'true');
 };
 
 // Function to add missing email fields to any existing orders
@@ -79,9 +74,11 @@ export const updateExistingOrdersWithEmails = () => {
 
 // Reset all app data (for testing)
 export const resetAppData = () => {
+  localStorage.setItem('hasInitialized', 'false'); // to allow fresh init
   csvService.saveProducts(sampleData.products);
   csvService.saveUsers(sampleData.users);
   csvService.saveOrders(sampleData.orders);
+  csvService.saveDiscounts(sampleData.discounts);
   updateExistingOrdersWithEmails();
 };
 

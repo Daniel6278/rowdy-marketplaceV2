@@ -94,7 +94,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="lg:hidden bg-utsa-blue mt-2 py-3 px-4 shadow-lg border-t border-utsa-orange">
           <div className="flex flex-col space-y-3">
-          {isAuthenticated && user?.isAdmin && (
+                    {isAuthenticated && user?.isAdmin && (
             <Link 
               to="/admin" 
               className="px-3 py-2 hover:text-utsa-orange hover:bg-utsa-blue-900 rounded-full transition-colors"

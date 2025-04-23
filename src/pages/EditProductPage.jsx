@@ -31,15 +31,17 @@ const EditProductPage = () => {
       try {
         const products = await csvService.getProducts();
         const product = products.find(p => p.id === id);
-        
-        if (!product) {
+        const isOwnerOrAdmin = user?.id === product?.sellerId || user?.isAdmin;
+        const isUserSeller = user?.id === product.sellerId || user?.isAdmin;
+
+        if (!isOwnerOrAdmin) {
           toast.error('Product not found');
           navigate('/products');
           return;
         }
         
         // Check if current user is the seller
-        if (user.id !== product.sellerId) {
+        if (!isUserSeller) {
           toast.error('You do not have permission to edit this listing');
           navigate('/products');
           return;

@@ -94,7 +94,9 @@ const LoginPage = () => {
     try {
       // Find user by email
       const user = csvService.findUserByEmail(formData.email);
-      
+      user.isAdmin = user.isAdmin === true || user.isAdmin === 'true';
+      console.log("Logging in user (cleaned):", user);
+      login(user);
       if (!user) {
         setErrors({
           email: 'No account found with this email'

@@ -25,27 +25,37 @@ const CartPage = () => {
   const { cart, clearCart, removeFromCart, user, isAuthenticated, addOrder } = useStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountError, setDiscountError] = useState('');
+
   // Calculate total (each item has quantity of 1)
   const subtotal = cart.reduce((sum, item) => sum + parseFloat(item.price), 0);
   const taxRate = 0.0825; // 8.25% tax rate
   const tax = subtotal * taxRate;
-  const total = subtotal + tax; // Total including tax
+  let discountAmount = 0;
+  if (appliedDiscount) {
+    discountAmount = appliedDiscount.type === 'percent'
+      ? subtotal * (parseFloat(appliedDiscount.amount) / 100)
+      : parseFloat(appliedDiscount.amount); // ✅ force it to number
+  }
   
+  const total = Math.max(subtotal + tax - discountAmount, 0);// Total including tax
+
   const handleRemoveItem = (e, productId) => {
     e.stopPropagation(); // Prevent triggering the card click
     removeFromCart(productId);
     toast.success('Item removed from cart');
   };
-  
+
   const handleProductClick = (product) => {
     setSelectedProduct(product);
   };
-  
+
   const handleCloseModal = () => {
     setSelectedProduct(null);
   };
-  
+
   const handleCheckout = async () => {
     if (!isAuthenticated) {
       toast.error('Please log in to checkout');
@@ -217,11 +227,15 @@ const CartPage = () => {
                   <span className="text-success font-medium">FREE</span>
                 </div>
                 
-                <div className="border-t pt-4 font-semibold">
-                  <div className="flex justify-between text-lg">
-                    <span>Total</span>
-                    <span className="accent-text">${total.toFixed(2)}</span>
+                {appliedDiscount && (
+                  <div className="flex justify-between">
+                      <span>Discount ({appliedDiscount.code})</span>
+                      <span>- ${discountAmount.toFixed(2)}</span>
                   </div>
+                )}
+                <div className="flex justify-between font-bold">
+                  <span>Total</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
               </div>
               
@@ -232,7 +246,43 @@ const CartPage = () => {
               >
                 {isCheckingOut ? 'Processing...' : 'Checkout'}
               </button>
-              
+              <div className="mt-6">
+                <label className="block text-sm font-semibold mb-1 text-utsa-blue">Discount Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={discountCode}
+                    onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                    placeholder="Enter code (e.g. WELCOME10)"
+                    className="input flex-1"
+                  />
+                  <button
+                    onClick={() => {
+                      const allDiscounts = csvService.getDiscounts();
+                      const match = allDiscounts.find(d => d.code === discountCode.trim());
+
+                      if (!match) {
+                        setAppliedDiscount(null);
+                        setDiscountError('Invalid or expired code.');
+                      } else {
+                        setAppliedDiscount(match);
+                        setDiscountError('');
+                      }
+                    }}
+                    className="btn btn-secondary"
+                  >
+                    Apply
+                  </button>
+                </div>
+                {discountError && <p className="text-red-500 text-sm mt-1">{discountError}</p>}
+                {appliedDiscount && (
+                  <p className="text-green-600 mt-2 text-sm">
+                    ✅ {appliedDiscount.code} applied — {appliedDiscount.type === 'percent' 
+                      ? `${appliedDiscount.amount}% off`
+                      : `$${appliedDiscount.amount} off`}
+                  </p>
+                )}
+              </div>
               <div className="mt-4 text-center text-sm text-light-gray">
                 <p>By checking out, you agree to meet the seller in a public location on or near the UTSA campus to complete the transaction.</p>
                 <p className="mt-2">Your email will be shared with the seller to coordinate the exchange.</p>

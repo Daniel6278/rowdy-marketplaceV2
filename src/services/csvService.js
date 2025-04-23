@@ -42,19 +42,44 @@ const loadData = (key, defaultData = []) => {
   return csv ? parseCSV(csv) : defaultData;
 };
 
+
+// Discounts operations
+const getDiscounts = () => loadData('discounts', []);
+const saveDiscounts = (discounts) => {
+  console.log('Saving discounts to localStorage:', discounts);
+  return saveData('discounts', discounts);
+};
+const addDiscount = (discount) => {
+  const discounts = getDiscounts();
+  const newDiscount = {
+    ...discount,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+  };
+  saveDiscounts([...discounts, newDiscount]);
+  return newDiscount;
+};
+
+const deleteDiscount = (id) => {
+  const updated = getDiscounts().filter(discount => discount.id !== id);
+  saveDiscounts(updated);
+  return updated;
+};
+
 // Products operations
 const getProducts = () => loadData('products', []);
 const saveProducts = (products) => saveData('products', products);
 const addProduct = (product) => {
   const products = getProducts();
-  const newProduct = { 
-    ...product, 
+  const newProduct = {
+    ...product,
     id: Date.now().toString(),
-    createdAt: new Date().toISOString() 
+    createdAt: new Date().toISOString()
   };
   saveProducts([...products, newProduct]);
   return newProduct;
 };
+
 
 const updateProduct = (product) => {
   const products = getProducts();
@@ -178,12 +203,14 @@ export const addOrder = (order) => {
 const updateOrderStatus = (orderId, status) => {
   console.log(`Updating order ${orderId} status to ${status}`);
   const orders = getOrders();
-  
   // Convert to string for consistent comparison
   const stringOrderId = String(orderId);
-  
+
   const orderIndex = orders.findIndex(order => String(order.id) === stringOrderId);
-  
+  if (status === 'completed') {
+    removeProduct(order.productId); // ✅ this is the best place for it
+  }
+
   if (orderIndex === -1) {
     console.error(`Order not found: ${orderId}`);
     throw new Error('Order not found');
@@ -244,7 +271,11 @@ const csvService = {
   getOrders,
   saveOrders,
   addOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  getDiscounts,
+  saveDiscounts,
+  addDiscount,
+  deleteDiscount
 };
 
 export default csvService;
