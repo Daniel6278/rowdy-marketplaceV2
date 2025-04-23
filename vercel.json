@@ -1,0 +1,3 @@
+{
+  "buildCommand": "chmod +x ./node_modules/@esbuild/linux-x64/bin/esbuild 2>/dev/null || true && chmod +x ./node_modules/esbuild/bin/esbuild 2>/dev/null || true && npm run build"
+} 
