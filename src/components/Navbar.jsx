@@ -39,6 +39,14 @@ const Navbar = () => {
         
         {/* Desktop Menu */}
         <div className="hidden lg:flex items-center space-x-4">
+          {isAuthenticated && user?.isAdmin && (
+            <Link 
+              to="/admin" 
+              className="px-3 py-2 hover:text-utsa-orange hover:bg-utsa-blue-900 rounded-full transition-colors"
+            >
+              Admin
+            </Link>
+          )}
           <Link to="/" className="px-3 py-2 hover:text-utsa-orange hover:bg-utsa-blue-900 rounded-full transition-colors">Home</Link>
           <Link to="/products" className="px-3 py-2 hover:text-utsa-orange hover:bg-utsa-blue-900 rounded-full transition-colors">Products</Link>
           <Link to="/forum" className="px-3 py-2 hover:text-utsa-orange hover:bg-utsa-blue-900 rounded-full transition-colors">Forum</Link>
@@ -86,6 +94,14 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="lg:hidden bg-utsa-blue mt-2 py-3 px-4 shadow-lg border-t border-utsa-orange">
           <div className="flex flex-col space-y-3">
+          {isAuthenticated && user?.isAdmin && (
+            <Link 
+              to="/admin" 
+              className="px-3 py-2 hover:text-utsa-orange hover:bg-utsa-blue-900 rounded-full transition-colors"
+            >
+              Admin
+            </Link>
+          )}
             <Link to="/" className="px-3 py-2 hover:bg-utsa-blue-900 hover:text-utsa-orange transition-colors rounded">Home</Link>
             <Link to="/products" className="px-3 py-2 hover:bg-utsa-blue-900 hover:text-utsa-orange transition-colors rounded">Products</Link>
             <Link to="/forum" className="px-3 py-2 hover:bg-utsa-blue-900 hover:text-utsa-orange transition-colors rounded">Forum</Link>
