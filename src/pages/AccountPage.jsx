@@ -291,7 +291,7 @@ const AccountPage = () => {
       <h1 className="text-3xl font-bold mb-8">My Account</h1>
       
       {/* Debug Information - Only visible in development */}
-      {process.env.NODE_ENV === 'development' && (
+      {/* {process.env.NODE_ENV === 'development' && (
         <div className="mb-6 p-4 bg-yellow-100 rounded-lg text-sm">
           <h3 className="font-bold mb-2">Debug Information</h3>
           <p>User ID: {user?.id}</p>
@@ -314,7 +314,7 @@ const AccountPage = () => {
             </button>
           </div>
         </div>
-      )}
+      )} */}
       
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {/* User Info */}

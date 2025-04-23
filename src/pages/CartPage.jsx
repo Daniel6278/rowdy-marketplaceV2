@@ -242,7 +242,7 @@ const CartPage = () => {
               <button
                 onClick={handleCheckout}
                 disabled={isCheckingOut}
-                className="btn-primary w-full"
+                className="btn btn-primary w-full"
               >
                 {isCheckingOut ? 'Processing...' : 'Checkout'}
               </button>

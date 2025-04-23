@@ -253,6 +253,21 @@ const updateOrderStatus = (orderId, status) => {
   return updatedOrder;
 };
 
+// Questions operations
+const getQuestions = () => loadData('questions', []);
+const saveQuestions = (questions) => saveData('questions', questions);
+const addQuestion = (question) => {
+  const questions = getQuestions();
+  const newQuestion = { 
+    ...question, 
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString(),
+    status: 'pending'
+  };
+  saveQuestions([...questions, newQuestion]);
+  return newQuestion;
+};
+
 // Export the service functions as a default object
 const csvService = {
   saveData,
@@ -272,6 +287,9 @@ const csvService = {
   saveOrders,
   addOrder,
   updateOrderStatus,
+  getQuestions,
+  saveQuestions,
+  addQuestion,
   getDiscounts,
   saveDiscounts,
   addDiscount,

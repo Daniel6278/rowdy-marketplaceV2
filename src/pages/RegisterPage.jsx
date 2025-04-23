@@ -38,6 +38,13 @@ const RegisterPage = () => {
       return;
     }
     
+    // Validate email domain
+    if (!email.endsWith('@my.utsa.edu')) {
+      setError('Please use your UTSA student email (@my.utsa.edu)');
+      setIsLoading(false);
+      return;
+    }
+    
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       setIsLoading(false);
@@ -119,9 +126,12 @@ const RegisterPage = () => {
               value={formData.email}
               onChange={handleChange}
               className="input"
-              placeholder="your.email@example.com"
+              placeholder="abc123@my.utsa.edu"
               required
             />
+            <p className="text-xs text-light-gray mt-1">
+              Must be a valid UTSA student email (@my.utsa.edu)
+            </p>
           </div>
           
           <div className="mb-4">

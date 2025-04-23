@@ -59,7 +59,7 @@ const AdminProducts = () => {
                   </Link>
                   <button
                     onClick={() => handleDelete(product.id)}
-                    className="btn bg-error text-white text-sm px-2 py-1"
+                    className="btn bg-error text-white text-sm px-2 py-1 hover:bg-utsa-orange hover:shadow-md transition-all duration-200"
                   >
                     Delete
                   </button>
@@ -166,7 +166,7 @@ const AdminUsers = () => {
                   <td className="p-2 space-x-2">
                     <button onClick={() => startEdit(user)} className="btn btn-secondary text-sm px-2 py-1">Edit</button>
                     {!(user.isAdmin === true || user.isAdmin === 'true') && (
-                      <button onClick={() => handleDelete(user.id)} className="btn bg-red-500 text-white text-sm px-2 py-1">
+                      <button onClick={() => handleDelete(user.id)} className="btn bg-red-500 text-white text-sm px-2 py-1 hover:bg-utsa-orange hover:shadow-md transition-all duration-200">
                         Delete
                       </button>
                     )}
@@ -181,7 +181,129 @@ const AdminUsers = () => {
   );
 };
 const AdminOrders = () => <div>📋 Order history coming soon</div>;
-const AdminDiscounts = () => {const [discounts, setDiscounts] = useState([]);
+const AdminQuestions = () => {
+  const [questions, setQuestions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadQuestions = async () => {
+      setIsLoading(true);
+      try {
+        const allQuestions = await csvService.getQuestions();
+        // Sort questions by date, newest first
+        allQuestions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setQuestions(allQuestions);
+      } catch (error) {
+        console.error('Error loading questions:', error);
+        toast.error('Failed to load questions');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuestions();
+  }, []);
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this question?')) {
+      const filteredQuestions = questions.filter(q => q.id !== id);
+      csvService.saveQuestions(filteredQuestions);
+      setQuestions(filteredQuestions);
+      toast.success('Question deleted');
+    }
+  };
+
+  const handleStatusChange = (id, newStatus) => {
+    const updatedQuestions = questions.map(q => {
+      if (q.id === id) {
+        return { ...q, status: newStatus };
+      }
+      return q;
+    });
+    
+    csvService.saveQuestions(updatedQuestions);
+    setQuestions(updatedQuestions);
+    toast.success(`Question marked as ${newStatus}`);
+  };
+
+  if (isLoading) {
+    return <div>Loading questions...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">User Questions</h2>
+      
+      {questions.length === 0 ? (
+        <p className="text-center py-4">No questions submitted yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border text-left">
+            <thead className="bg-utsa-blue text-white">
+              <tr>
+                <th className="p-3">Date</th>
+                <th className="p-3">User</th>
+                <th className="p-3">Email</th>
+                <th className="p-3">Question</th>
+                <th className="p-3">Status</th>
+                <th className="p-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {questions.map(q => (
+                <tr key={q.id} className="border-b hover:bg-white">
+                  <td className="p-3">
+                    {new Date(q.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </td>
+                  <td className="p-3">{q.name}</td>
+                  <td className="p-3">
+                    <a href={`mailto:${q.email}`} className="text-utsa-blue hover:text-utsa-orange">
+                      {q.email}
+                    </a>
+                  </td>
+                  <td className="p-3">{q.question}</td>
+                  <td className="p-3">
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs ${
+                      q.status === 'pending' ? 'bg-utsa-orange text-white' :
+                      q.status === 'answered' ? 'bg-success text-white' :
+                      'bg-utsa-blue text-white'
+                    }`}>
+                      {q.status}
+                    </span>
+                  </td>
+                  <td className="p-2 space-x-2">
+                    {q.status === 'pending' && (
+                      <button
+                        onClick={() => handleStatusChange(q.id, 'answered')}
+                        className="btn btn-secondary text-xs px-1.5 py-0.5 mb-2"
+                      >
+                        Answered
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(q.id)}
+                      className="btn bg-error text-white text-sm px-2 py-1 hover:bg-utsa-orange hover:shadow-md transition-all duration-200"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+const AdminDiscounts = () => {
+  const [discounts, setDiscounts] = useState([]);
   const [form, setForm] = useState({ code: '', amount: '', type: 'percent' });
 
   useEffect(() => {
@@ -245,7 +367,7 @@ const AdminDiscounts = () => {const [discounts, setDiscounts] = useState([]);
               </p>
             </div>
             <button 
-              className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+              className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-utsa-orange hover:shadow-md transition-all duration-200"
               onClick={() => handleDelete(discount.id)}
             >
               Delete
@@ -294,6 +416,7 @@ const AdminPage = () => {
       case 'products': return <AdminProducts />;
       case 'users': return <AdminUsers />;
       case 'orders': return <AdminOrders />;
+      case 'questions': return <AdminQuestions />;
       case 'discounts': return <AdminDiscounts />;
       default: return null;
     }
@@ -305,7 +428,7 @@ const AdminPage = () => {
 
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b pb-2">
-        {['products', 'users', 'orders', 'discounts'].map(tab => (
+        {['products', 'users', 'orders', 'questions', 'discounts'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}

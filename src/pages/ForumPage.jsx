@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Container from "../ui/Container";
 import Title from "../ui/Title";
+import csvService from "../services/csvService";
+import toast from 'react-hot-toast';
 
 // UTSA Colors
 const utsaColors = {
@@ -57,8 +59,21 @@ const ForumPage = () => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In a real app, you would send this data to your backend
-    console.log("Question submitted:", { name, email, question });
+    
+    // Save the question using csvService
+    csvService.addQuestion({
+      name,
+      email,
+      question,
+      category: "General" // Default category
+    });
+    
+    // Display toast notification
+    toast.success('Your question has been submitted successfully!', {
+      duration: 4000,
+      icon: '✅'
+    });
+    
     // Reset form and show success message
     setName("");
     setEmail("");

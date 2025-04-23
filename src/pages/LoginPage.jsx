@@ -94,21 +94,29 @@ const LoginPage = () => {
     try {
       // Find user by email
       const user = csvService.findUserByEmail(formData.email);
-      user.isAdmin = user.isAdmin === true || user.isAdmin === 'true';
-      console.log("Logging in user (cleaned):", user);
-      login(user);
+      
+      // Check if user exists
       if (!user) {
         setErrors({
           email: 'No account found with this email'
         });
+        toast.error('No account exists with this email. Please create an account first.', {
+          duration: 5000,
+          icon: '🔔'
+        });
+        setIsSubmitting(false);
         return;
       }
+      
+      // Process isAdmin flag
+      user.isAdmin = user.isAdmin === true || user.isAdmin === 'true';
       
       // Check password
       if (user.password !== formData.password) {
         setErrors({
           password: 'Incorrect password'
         });
+        setIsSubmitting(false);
         return;
       }
       

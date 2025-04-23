@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useStore from '../store/store';
 import logo from '../assets/logo.png';
@@ -7,6 +7,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout, cart } = useStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showLogoPopup, setShowLogoPopup] = useState(false);
+  const popupRef = useRef(null);
   
   const handleLogout = () => {
     logout();
@@ -15,17 +17,69 @@ const Navbar = () => {
 
   const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
   
+  // Close popup when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popupRef.current && !popupRef.current.contains(event.target)) {
+        setShowLogoPopup(false);
+      }
+    };
+    
+    // Close popup when pressing escape key
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape') {
+        setShowLogoPopup(false);
+      }
+    };
+
+    if (showLogoPopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscKey);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showLogoPopup]);
+  
   return (
     <nav className="bg-utsa-blue text-white py-3 shadow-md">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center">
-          <div className="mr-3 flex-shrink-0 bg-utsa-orange bg-opacity-80 rounded-full p-1">
+          <div 
+            className="mr-3 flex-shrink-0 bg-utsa-orange bg-opacity-80 rounded-full p-1 cursor-pointer"
+            onClick={() => setShowLogoPopup(true)}
+          >
             <img src={logo} alt="Rowdy Marketplace Logo" className="h-12 w-auto" />
           </div>
           <Link to="/" className="text-2xl font-bold text-utsa-orange hover:text-white transition-colors">
             Rowdy Marketplace
           </Link>
         </div>
+        
+        {/* Logo Popup */}
+        {showLogoPopup && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div 
+              ref={popupRef}
+              className="bg-white p-6 rounded-xl shadow-2xl max-w-md mx-auto text-center transform transition-all"
+            >
+              <div className="bg-utsa-orange bg-opacity-90 rounded-full p-7 inline-block mb-4">
+                <img src={logo} alt="Rowdy Marketplace Logo" className="h-48 w-auto" />
+              </div>
+
+              <p className="text-utsa-blue text-xl font-bold mb-2">The official logo of the UTSA Rowdy Marketplace.</p>
+              <p className="text-sm text-gray-600 mb-4">© 2025 Rowdy Marketplace. All rights reserved.</p>
+              <button 
+                className="bg-utsa-blue text-white px-4 py-2 rounded-full hover:bg-opacity-90"
+                onClick={() => setShowLogoPopup(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
         
         {/* Mobile Menu Button */}
         <button 

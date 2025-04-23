@@ -89,7 +89,7 @@ export const users = [
   {
     id: '2',
     name: 'Jane Smith',
-    email: 'jane@example.com',
+    email: 'jane@my.utsa.edu',
     password: 'password123', // In a real app, this would be hashed
     isAdmin: false,
     createdAt: '2023-03-10T08:45:00Z'
@@ -97,7 +97,7 @@ export const users = [
   {
     id: '3',
     name: 'Mike Johnson',
-    email: 'mike@example.com',
+    email: 'mike@my.utsa.edu',
     password: 'password123', // In a real app, this would be hashed
     isAdmin: false,
     createdAt: '2023-03-11T09:30:00Z'
@@ -105,7 +105,7 @@ export const users = [
   {
     id: '4',
     name: 'Sarah Williams',
-    email: 'sarah@example.com',
+    email: 'sarah@my.utsa.edu',
     password: 'password123', // In a real app, this would be hashed
     isAdmin: false,
     createdAt: '2023-03-12T10:15:00Z'
@@ -174,11 +174,43 @@ export const discounts = [
   }
 ];
 
+// Sample questions data
+export const questions = [
+  {
+    id: '1',
+    name: 'Mike Johnson',
+    email: 'mike@example.com',
+    question: 'How do I cancel an order that I placed by mistake?',
+    category: 'Orders',
+    status: 'pending',
+    createdAt: '2023-04-01T10:30:00Z'
+  },
+  {
+    id: '2',
+    name: 'Sarah Williams',
+    email: 'sarah@example.com',
+    question: 'Is there a way to contact a seller before placing an order?',
+    category: 'General',
+    status: 'answered',
+    createdAt: '2023-04-02T15:45:00Z'
+  },
+  {
+    id: '3',
+    name: 'John Smith',
+    email: 'john@example.com',
+    question: 'How long does it typically take for a seller to respond to a purchase request?',
+    category: 'Shopping',
+    status: 'pending',
+    createdAt: '2023-04-03T09:15:00Z'
+  }
+];
+
 // Export all sample data
 export default {
   discounts,
   categories,
   products,
   users,
-  orders
+  orders,
+  questions
 }; 
