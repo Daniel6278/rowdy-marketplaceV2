@@ -72,6 +72,122 @@ const AdminProducts = () => {
     </div>
   );
 };
+
+const AdminSells = () => {
+  const [sells, setSells] = useState([]);
+  const [form, setForm] = useState({ name: '', amount: '', type: 'percent', scope: 'category' });
+  const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    const stored = csvService.getSells?.() || [];
+    const normalized = stored.map(sell => ({
+      ...sell,
+      amount: parseFloat(sell.amount), // ensure it's a number
+      type: sell.type?.toLowerCase(),  // just in case
+      scope: sell.scope || 'category',
+      name: sell.name || '',
+    }));
+    console.log("Loaded sells:", normalized);
+    setSells(normalized);
+  }, []);
+
+  const handleAddOrEdit = () => {
+    if (!form.name || !form.amount) return alert('All fields are required');
+
+    const newSell = {
+      id: editingId || Date.now().toString(),
+      name: form.name,
+      amount: parseFloat(form.amount),
+      type: form.type,
+      scope: form.scope,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedSells = editingId
+      ? sells.map(s => (s.id === editingId ? newSell : s))
+      : [...sells, newSell];
+
+    csvService.saveSells(updatedSells);
+    setSells(updatedSells);
+    setForm({ name: '', amount: '', type: 'percent', scope: 'category' });
+    setEditingId(null);
+  };
+
+  const handleEdit = (sell) => {
+    setEditingId(sell.id);
+    setForm({ name: sell.name, amount: sell.amount, type: sell.type, scope: sell.scope });
+  };
+
+  const handleDelete = (id) => {
+    if (!confirm('Delete this deal?')) return;
+    const updated = sells.filter(s => s.id !== id);
+    csvService.saveSells(updated);
+    setSells(updated);
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold">Create New Sell</h2>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <input
+          className="input"
+          placeholder="Category or Product"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+        <input
+          className="input"
+          placeholder="Amount"
+          type="number"
+          value={form.amount}
+          onChange={(e) => setForm({ ...form, amount: e.target.value })}
+        />
+        <select
+          className="input"
+          value={form.type}
+          onChange={(e) => setForm({ ...form, type: e.target.value })}
+        >
+          <option value="percent">Percent (%)</option>
+          <option value="fixed">Fixed ($)</option>
+        </select>
+        <select
+          className="input"
+          value={form.scope}
+          onChange={(e) => setForm({ ...form, scope: e.target.value })}
+        >
+          <option value="category">By Category</option>
+          <option value="product">By Product Name</option>
+        </select>
+
+        <button onClick={handleAddOrEdit} className="btn btn-primary">
+          {editingId ? 'Save Changes' : 'Add Sell'}
+        </button>
+      </div>
+
+      <h3 className="text-lg font-semibold mt-6">Existing Sells</h3>
+      <ul className="space-y-2">
+        {sells.map(sell => (
+          <li
+            key={sell.id}
+            className="p-4 border rounded flex justify-between items-center bg-white shadow"
+          >
+            <div>
+              <strong>{sell.scope === 'category' ? 'Category' : 'Product'}:</strong> {sell.name}<br />
+              <strong>Discount:</strong> {sell.type === 'percent' ? `${sell.amount}% off` : `$${sell.amount} off`}
+            </div>
+            <div className="space-x-2">
+              <button onClick={() => handleEdit(sell)} className="btn btn-secondary text-sm">Edit</button>
+              <button onClick={() => handleDelete(sell.id)} className="btn bg-red-500 text-white text-sm">Delete</button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
@@ -180,7 +296,135 @@ const AdminUsers = () => {
     </div>
   );
 };
-const AdminOrders = () => <div>📋 Order history coming soon</div>;
+const AdminOrders = () => {
+  const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  useEffect(() => {
+    const allOrders = csvService.getOrders();
+    setOrders(allOrders);
+  }, []);
+
+  useEffect(() => {
+    if (selectedOrder && !selectedOrder.imageUrl) {
+      const allProducts = csvService.getProducts();
+      const product = allProducts.find(p => p.id === selectedOrder.productId);
+      if (product) {
+        setSelectedOrder(prev => ({ ...prev, imageUrl: product.imageUrl }));
+      }
+    }
+  }, [selectedOrder]);
+
+  const handleCancel = (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+
+    const updatedOrders = orders.map(order =>
+      order.id === orderId
+        ? { ...order, status: 'cancelled', updatedAt: new Date().toISOString() }
+        : order
+    );
+    csvService.saveOrders(updatedOrders);
+    setOrders(updatedOrders);
+  };
+
+  const formatDate = (dateStr) =>
+    new Date(dateStr).toLocaleString(undefined, {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Order History</h2>
+
+      {orders.length === 0 ? (
+        <p className="text-gray-600">No orders found.</p>
+      ) : (
+        <table className="w-full border text-sm text-left">
+          <thead className="bg-utsa-blue text-white">
+            <tr>
+              <th className="p-2">Buyer</th>
+              <th className="p-2">Seller</th>
+              <th className="p-2">Product</th>
+              <th className="p-2">Price</th>
+              <th className="p-2">Status</th>
+              <th className="p-2">Created</th>
+              <th className="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map(order => (
+              <tr key={order.id} className="border-b">
+                <td className="p-2">{order.buyerName}</td>
+                <td className="p-2">{order.sellerName}</td>
+                <td className="p-2">{order.productTitle}</td>
+                <td className="p-2">${parseFloat(order.price).toFixed(2)}</td>
+                <td className="p-2 capitalize text-sm font-medium">
+                  {order.status}
+                </td>
+                <td className="p-2">{formatDate(order.createdAt)}</td>
+                <td className="p-2 space-x-2">
+                  <button
+                    onClick={() =>  setSelectedOrder(order)}
+                    className="btn btn-secondary text-xs px-2 py-1"
+                  >
+                    View
+                  </button>
+                  {order.status !== 'completed' && order.status !== 'cancelled' && (
+                    <button
+                      onClick={() => handleCancel(order.id)}
+                      className="btn bg-red-500 text-white text-xs px-2 py-1"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  {selectedOrder && (
+                    <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+                      <div className="bg-white p-6 rounded-lg shadow-xl max-w-xl w-full relative">
+                        <button
+                          onClick={() => setSelectedOrder(null)}
+                          className="absolute top-2 right-3 text-gray-500 hover:text-black"
+                        >
+                          ✕
+                        </button>
+
+                        <h2 className="text-xl font-bold mb-4">Order Details</h2>
+
+                        <div className="flex gap-4">
+                          <img
+                            src={selectedOrder.imageUrl || '/images/placeholder.jpg'}
+                            alt={selectedOrder.productTitle}
+                            className="w-28 h-28 object-cover rounded border"
+                          />
+                          <div className="flex-1 space-y-2">
+                            <div><strong>Product:</strong> {selectedOrder.productTitle}</div>
+                            <div><strong>Price:</strong> ${parseFloat(selectedOrder.price).toFixed(2)}</div>
+                            <div><strong>Status:</strong> {selectedOrder.status}</div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 space-y-1 text-sm text-gray-700">
+                          <div><strong>Buyer:</strong> {selectedOrder.buyerName}</div>
+                          <div><strong>Seller:</strong> {selectedOrder.sellerName}</div>
+                          <div><strong>Order ID:</strong> {selectedOrder.id}</div>
+                          <div><strong>Placed:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</div>
+                          {selectedOrder.updatedAt && (
+                            <div><strong>Last Updated:</strong> {new Date(selectedOrder.updatedAt).toLocaleString()}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
 const AdminQuestions = () => {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -418,6 +662,7 @@ const AdminPage = () => {
       case 'orders': return <AdminOrders />;
       case 'questions': return <AdminQuestions />;
       case 'discounts': return <AdminDiscounts />;
+      case 'sells': return <AdminSells />;
       default: return null;
     }
   };
@@ -428,7 +673,7 @@ const AdminPage = () => {
 
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b pb-2">
-        {['products', 'users', 'orders', 'questions', 'discounts'].map(tab => (
+        {['products', 'users', 'orders', 'questions', 'discounts', 'sells'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}

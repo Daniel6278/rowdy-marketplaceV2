@@ -8,11 +8,11 @@ const AccountPage = () => {
   const { user, isAuthenticated, updateUser } = useStore();
   const [activeTab, setActiveTab] = useState('profile');
   const [activeOrdersType, setActiveOrdersType] = useState('purchases');
-  
+
   const [orders, setOrders] = useState([]);
   const [listings, setListings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Profile form state
   const [profileForm, setProfileForm] = useState({
     name: '',
@@ -23,7 +23,7 @@ const AccountPage = () => {
   });
   const [profileErrors, setProfileErrors] = useState({});
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   useEffect(() => {
     // Initialize profile form with user data
     if (user) {
@@ -36,7 +36,7 @@ const AccountPage = () => {
       });
     }
   }, [user]);
-  
+
   useEffect(() => {
     const loadUserData = async () => {
       if (!user) return;
@@ -73,12 +73,12 @@ const AccountPage = () => {
         
         // Load products
         const allProducts = await csvService.getProducts();
-        
+
         // Filter products where user is seller
         const userListings = allProducts.filter(
           product => String(product.sellerId) === String(user.id)
         );
-        
+
         setListings(userListings);
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -87,10 +87,10 @@ const AccountPage = () => {
         setIsLoading(false);
       }
     };
-    
+
     loadUserData();
   }, [user]);
-  
+
   // Handle profile form changes
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -98,7 +98,7 @@ const AccountPage = () => {
       ...profileForm,
       [name]: value
     });
-    
+
     // Clear errors for this field
     if (profileErrors[name]) {
       setProfileErrors({
@@ -107,12 +107,12 @@ const AccountPage = () => {
       });
     }
   };
-  
+
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       // Update order status in CSV/localStorage
       const updatedOrder = await csvService.updateOrderStatus(orderId, newStatus);
-      
+
       // Update local state
       setOrders(prevOrders => 
         prevOrders.map(order => 

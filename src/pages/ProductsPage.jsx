@@ -198,9 +198,41 @@ const ProductsPage = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredProducts.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {filteredProducts.map(product => {
+                const sells = csvService.getSells();
+                let appliedSell = null;
+
+                for (let sell of sells) {
+                  if (
+                    (sell.scope === 'category' && sell.name.toLowerCase() === product.category.toLowerCase()) ||
+                    (sell.scope === 'product' && sell.name.toLowerCase() === product.title.toLowerCase())
+                  ) {
+                    appliedSell = sell;
+                    break;
+                  }
+                }
+
+                let salePrice = parseFloat(product.price);
+                if (appliedSell) {
+                  if (appliedSell.type === 'percent') {
+                    salePrice = salePrice * (1 - appliedSell.amount / 100);
+                  } else if (appliedSell.type === 'fixed') {
+                    salePrice = salePrice - appliedSell.amount;
+                  }
+                }
+
+                // Pass extra info to ProductCard
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    isOnSale={!!appliedSell}
+                    originalPrice={parseFloat(product.price)}
+                    salePrice={salePrice.toFixed(2)}
+                  />
+                );
+              })}
+
             </div>
           )}
         </div>

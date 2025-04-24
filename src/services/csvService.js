@@ -1,16 +1,5 @@
 import Papa from 'papaparse';
 
-// Helper function to save data to localStorage
-const saveToLocalStorage = (key, data) => {
-  localStorage.setItem(key, JSON.stringify(data));
-};
-
-// Helper function to get data from localStorage
-const getFromLocalStorage = (key) => {
-  const data = localStorage.getItem(key);
-  return data ? JSON.parse(data) : null;
-};
-
 // Convert array of objects to CSV
 const convertToCSV = (data) => {
   if (!data || data.length === 0) return '';
@@ -40,6 +29,43 @@ const saveData = (key, data) => {
 const loadData = (key, defaultData = []) => {
   const csv = localStorage.getItem(`csv_${key}`);
   return csv ? parseCSV(csv) : defaultData;
+};
+
+// Sells operations
+const getSells = () => loadData('sells', []);
+const saveSells = (sells) => {
+  console.log('Saving sells to localStorage:', sells);
+  return saveData('sells', sells);
+};
+
+const addSells = (sell) => {
+  const sells = getSells();
+  const newSell = {
+    ...sell,
+    id: Date.now().toString(),
+    createdAt: new Date().toISOString()
+  };
+  saveSells([...sells, newSell]);
+  return newSell;
+};
+
+const deleteSells = (id) => {
+  const updated = getSells().filter(s => s.id !== id);
+  saveSells(updated);
+  return updated;
+};
+
+const updateSells = (updatedSell) => {
+  const sells = getSells();
+  const index = sells.findIndex(s => s.id === updatedSell.id);
+  if (index === -1) throw new Error('Sell not found');
+  sells[index] = {
+    ...sells[index],
+    ...updatedSell,
+    updatedAt: new Date().toISOString()
+  };
+  saveSells(sells);
+  return sells[index];
 };
 
 
@@ -258,8 +284,8 @@ const getQuestions = () => loadData('questions', []);
 const saveQuestions = (questions) => saveData('questions', questions);
 const addQuestion = (question) => {
   const questions = getQuestions();
-  const newQuestion = { 
-    ...question, 
+  const newQuestion = {
+    ...question,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
     status: 'pending'
@@ -293,7 +319,12 @@ const csvService = {
   getDiscounts,
   saveDiscounts,
   addDiscount,
-  deleteDiscount
+  deleteDiscount,
+  getSells,
+  saveSells,
+  addSells,
+  deleteSells,
+  updateSells
 };
 
 export default csvService;

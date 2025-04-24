@@ -154,6 +154,34 @@ export const orders = [
   }
 ];
 
+// Sample sells data
+export const sells = [
+  {
+    id: '1',
+    name: 'Dorm Essentials',
+    type: 'percent',
+    amount: 15,
+    scope: 'category',
+    createdAt: '2024-04-01T12:00:00Z'
+  },
+  {
+    id: '2',
+    name: 'TI-84 Plus Calculator',
+    type: 'fixed',
+    amount: 10,
+    scope: 'product',
+    createdAt: '2024-04-02T15:30:00Z'
+  },
+  {
+    id: '3',
+    name: 'Clothing',
+    type: 'percent',
+    amount: 20,
+    scope: 'category',
+    createdAt: '2024-04-05T09:15:00Z'
+  }
+];
+
 // Sample discounts data
 export const discounts = [
   {
@@ -212,5 +240,6 @@ export default {
   products,
   users,
   orders,
-  questions
+  questions,
+  sells
 }; 

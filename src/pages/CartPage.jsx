@@ -29,8 +29,44 @@ const CartPage = () => {
   const [appliedDiscount, setAppliedDiscount] = useState(null);
   const [discountError, setDiscountError] = useState('');
 
+  const sells = csvService.getSells();
+
+  const getSaleInfo = (product) => {
+    if (!product || !product.price) {
+      return { isOnSale: false, originalPrice: 0, salePrice: 0 };
+    }
+  
+    const sells = csvService.getSells() || [];
+  
+    const matchingSell = sells.find(sell =>
+      (sell.scope === 'category' && sell.name.toLowerCase() === product.category?.toLowerCase()) ||
+      (sell.scope === 'product' && sell.name.toLowerCase() === product.title?.toLowerCase())
+    );
+  
+    const originalPrice = parseFloat(product.price) || 0;
+    let salePrice = originalPrice;
+  
+    if (matchingSell) {
+      if (matchingSell.type === 'percent') {
+        salePrice = originalPrice * (1 - matchingSell.amount / 100);
+      } else if (matchingSell.type === 'fixed') {
+        salePrice = originalPrice - matchingSell.amount;
+      }
+    }
+  
+    return {
+      isOnSale: !!matchingSell,
+      originalPrice,
+      salePrice: parseFloat(salePrice.toFixed(2)) // prevent undefined early
+    };
+  };
+
+
   // Calculate total (each item has quantity of 1)
-  const subtotal = cart.reduce((sum, item) => sum + parseFloat(item.price), 0);
+  const subtotal = cart.reduce((sum, item) => {
+    const { salePrice } = getSaleInfo(item);
+    return sum + salePrice;
+  }, 0);
   const taxRate = 0.0825; // 8.25% tax rate
   const tax = subtotal * taxRate;
   let discountAmount = 0;
@@ -82,7 +118,8 @@ const CartPage = () => {
         }
         
         // Calculate item price with tax
-        const itemPrice = parseFloat(item.price);
+        const { salePrice } = getSaleInfo(item);
+        const itemPrice = parseFloat(salePrice) || 0; // Ensure item price is a number
         const itemTax = itemPrice * taxRate;
         const itemTotal = itemPrice + itemTax;
         
@@ -152,6 +189,9 @@ const CartPage = () => {
   }
   
   return (
+
+
+
     <>
       <div>
         <h1 className="section-title text-3xl mb-8">Your Cart</h1>
@@ -181,9 +221,17 @@ const CartPage = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-utsa-blue">{item.title}</p>
                         <p className="text-light-gray text-sm">{item.sellerName}</p>
-                        <p className="text-utsa-orange font-semibold mt-1">
-                          ${parseFloat(item.price).toFixed(2)}
-                        </p>
+                        {(() => {
+                          const { isOnSale, originalPrice, salePrice } = getSaleInfo(item);
+                          return isOnSale ? (
+                            <div className="flex flex-col">
+                              <span className="text-sm line-through text-gray-400">${originalPrice.toFixed(2)}</span>
+                              <span className="text-utsa-orange font-semibold">${salePrice.toFixed(2)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-utsa-orange font-semibold">${originalPrice.toFixed(2)}</span>
+                          );
+                        })()}
                       </div>
                       <div>
                         <button 

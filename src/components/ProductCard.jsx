@@ -4,7 +4,7 @@ import useStore from '../store/store';
 import toast from 'react-hot-toast';
 import ProductModal from './ProductModal';
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, isOnSale = false, originalPrice, salePrice }) => {
   const { addToCart, user } = useStore();
   const [showModal, setShowModal] = useState(false);
   
@@ -44,7 +44,15 @@ const ProductCard = ({ product }) => {
         <div className="p-4">
           <div className="flex justify-between items-start">
             <h3 className="font-bold text-lg transition-colors duration-200 text-utsa-blue group-hover:text-utsa-orange">{product.title}</h3>
-            <span className="text-utsa-orange font-bold">${formattedPrice}</span>
+            {isOnSale ? (
+              <div className="flex flex-col items-end">
+                <span className="text-sm text-gray-400 line-through">${originalPrice.toFixed(2)}</span>
+                <span className="text-utsa-orange font-bold">${salePrice}</span>
+                <span className="text-xs text-white bg-utsa-orange px-2 py-0.5 rounded-full mt-1">On Sale</span>
+              </div>
+            ) : (
+              <span className="text-utsa-orange font-bold">${formattedPrice}</span>
+            )}
           </div>
           
           <p className="text-sm text-light-gray mt-1">{product.category}</p>
