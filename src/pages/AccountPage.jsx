@@ -540,7 +540,7 @@ const AccountPage = () => {
                       : "You haven't sold any items yet."}
                   </p>
                   {activeOrdersType === 'purchases' ? (
-                    <Link to="/products" className="btn-primary">
+                    <Link to="/products" className="btn btn-primary">
                       Browse Products
                     </Link>
                   ) : (
