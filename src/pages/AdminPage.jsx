@@ -541,6 +541,9 @@ const AdminUsers = () => {
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [sortField, setSortField] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const allOrders = csvService.getOrders();
@@ -556,6 +559,17 @@ const AdminOrders = () => {
       }
     }
   }, [selectedOrder]);
+
+  const handleSort = (field) => {
+    // If clicking the same field, toggle direction
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, set it and default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
 
   const handleCancel = (orderId) => {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
@@ -575,27 +589,101 @@ const AdminOrders = () => {
       timeStyle: 'short',
     });
 
+  // Filter orders based on search query
+  const filteredOrders = orders.filter(order => {
+    if (!searchQuery) return true;
+    
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      (order.buyerName && order.buyerName.toLowerCase().includes(searchLower)) ||
+      (order.sellerName && order.sellerName.toLowerCase().includes(searchLower)) ||
+      (order.productTitle && order.productTitle.toLowerCase().includes(searchLower)) ||
+      (order.status && order.status.toLowerCase().includes(searchLower)) ||
+      (order.price && order.price.toString().includes(searchQuery))
+    );
+  });
+
+  // Sort filtered orders
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    // Handle numeric fields
+    if (sortField === 'price') {
+      const aValue = parseFloat(a[sortField]) || 0;
+      const bValue = parseFloat(b[sortField]) || 0;
+      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+    
+    // Handle date fields
+    if (sortField === 'createdAt') {
+      const aDate = new Date(a[sortField] || 0);
+      const bDate = new Date(b[sortField] || 0);
+      return sortDirection === 'asc' ? aDate - bDate : bDate - aDate;
+    }
+    
+    // Handle string fields
+    const aValue = a[sortField] || '';
+    const bValue = b[sortField] || '';
+    return sortDirection === 'asc' 
+      ? aValue.localeCompare(bValue) 
+      : bValue.localeCompare(aValue);
+  });
+
+  // Render sort indicator
+  const renderSortIndicator = (field) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+  };
+  
   return (
     <div className="space-y-6 text-utsa-blue">
       <h2 className="text-xl text-utsa-blue font-semibold">Order History</h2>
+      
+      {/* Search Box */}
+      <div className="mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by buyer, seller, product, price, or status..."
+            className="border border-gray-300 rounded-md py-2 px-4 w-full pl-10 focus:outline-none focus:ring-2 focus:ring-utsa-blue focus:border-transparent text-utsa-blue"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+        </div>
+      </div>
 
-      {orders.length === 0 ? (
+      {sortedOrders.length === 0 ? (
         <p className="text-gray-600">No orders found.</p>
       ) : (
         <table className="w-full border text-sm text-left">
           <thead className="bg-utsa-blue text-white">
             <tr>
-              <th className="p-2">Buyer</th>
-              <th className="p-2">Seller</th>
-              <th className="p-2">Product</th>
-              <th className="p-2">Price</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Created</th>
+              <th className="p-2 cursor-pointer hover:bg-utsa-orange" onClick={() => handleSort('buyerName')}>
+                Buyer{renderSortIndicator('buyerName')}
+              </th>
+              <th className="p-2 cursor-pointer hover:bg-utsa-orange" onClick={() => handleSort('sellerName')}>
+                Seller{renderSortIndicator('sellerName')}
+              </th>
+              <th className="p-2 cursor-pointer hover:bg-utsa-orange" onClick={() => handleSort('productTitle')}>
+                Product{renderSortIndicator('productTitle')}
+              </th>
+              <th className="p-2 cursor-pointer hover:bg-utsa-orange" onClick={() => handleSort('price')}>
+                Price{renderSortIndicator('price')}
+              </th>
+              <th className="p-2 cursor-pointer hover:bg-utsa-orange" onClick={() => handleSort('status')}>
+                Status{renderSortIndicator('status')}
+              </th>
+              <th className="p-2 cursor-pointer hover:bg-utsa-orange" onClick={() => handleSort('createdAt')}>
+                Created{renderSortIndicator('createdAt')}
+              </th>
               <th className="p-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map(order => (
+            {sortedOrders.map(order => (
               <tr key={order.id} className="border-b">
                 <td className="p-2">{order.buyerName}</td>
                 <td className="p-2">{order.sellerName}</td>
