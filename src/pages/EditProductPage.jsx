@@ -190,7 +190,7 @@ const EditProductPage = () => {
   
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Edit Your Listing</h1>
+      <h1 className="text-3xl text-utsa-blue font-bold mb-8">Edit Your Listing</h1>
       
       <div className="bg-white rounded-lg shadow p-6">
         <form onSubmit={handleSubmit}>
@@ -338,7 +338,7 @@ const EditProductPage = () => {
             </button>
             <button
               type="submit"
-              className="btn-primary flex-1"
+              className="btn btn-primary flex-1"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving Changes...' : 'Save Changes'}

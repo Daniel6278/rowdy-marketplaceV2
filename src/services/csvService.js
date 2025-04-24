@@ -233,10 +233,7 @@ const updateOrderStatus = (orderId, status) => {
   const stringOrderId = String(orderId);
 
   const orderIndex = orders.findIndex(order => String(order.id) === stringOrderId);
-  if (status === 'completed') {
-    removeProduct(order.productId); // ✅ this is the best place for it
-  }
-
+  
   if (orderIndex === -1) {
     console.error(`Order not found: ${orderId}`);
     throw new Error('Order not found');
@@ -248,26 +245,13 @@ const updateOrderStatus = (orderId, status) => {
     updatedAt: new Date().toISOString() 
   };
   
-  orders[orderIndex] = updatedOrder;
-  saveOrders(orders);
-  console.log(`Order ${orderId} updated successfully:`, updatedOrder);
-  
   // If order is marked as completed, remove the product from available products
   if (status === 'completed') {
     const productId = updatedOrder.productId;
     if (productId) {
       console.log(`Removing product ${productId} as order is completed`);
       try {
-        // First get the product to verify it exists
-        const products = getProducts();
-        const productExists = products.some(product => String(product.id) === String(productId));
-        
-        if (productExists) {
-          removeProduct(productId);
-          console.log(`Product ${productId} removed successfully`);
-        } else {
-          console.warn(`Product ${productId} was not found in the products list`);
-        }
+        removeProduct(productId);
       } catch (error) {
         console.error(`Error removing product ${productId}:`, error);
       }
@@ -275,6 +259,10 @@ const updateOrderStatus = (orderId, status) => {
       console.warn('Cannot remove product: Order does not have a productId');
     }
   }
+  
+  orders[orderIndex] = updatedOrder;
+  saveOrders(orders);
+  console.log(`Order ${orderId} updated successfully:`, updatedOrder);
   
   return updatedOrder;
 };

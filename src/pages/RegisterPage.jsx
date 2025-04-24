@@ -126,7 +126,7 @@ const RegisterPage = () => {
               value={formData.email}
               onChange={handleChange}
               className="input"
-              placeholder="abc123@my.utsa.edu"
+              placeholder="name.lastname@my.utsa.edu"
               required
             />
             <p className="text-xs text-light-gray mt-1">

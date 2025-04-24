@@ -28,7 +28,7 @@ const AdminProducts = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-utsa-blue">
       {products.length === 0 ? (
         <p>No products found.</p>
       ) : (
@@ -75,10 +75,25 @@ const AdminProducts = () => {
 
 const AdminSells = () => {
   const [sells, setSells] = useState([]);
-  const [form, setForm] = useState({ name: '', amount: '', type: 'percent', scope: 'category' });
+  const [categories, setCategories] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [form, setForm] = useState({ 
+    name: '', 
+    amount: '', 
+    type: 'percent', 
+    scope: 'category', 
+    startDate: '', 
+    endDate: '', 
+    minPurchase: '', 
+    maxDiscount: '',
+    usageLimit: '',
+    description: '',
+    userId: ''
+  });
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
+    // Load sells data
     const stored = csvService.getSells?.() || [];
     const normalized = stored.map(sell => ({
       ...sell,
@@ -86,13 +101,44 @@ const AdminSells = () => {
       type: sell.type?.toLowerCase(),  // just in case
       scope: sell.scope || 'category',
       name: sell.name || '',
+      startDate: sell.startDate || '',
+      endDate: sell.endDate || '',
+      minPurchase: sell.minPurchase || '',
+      maxDiscount: sell.maxDiscount || '',
+      usageLimit: sell.usageLimit || '',
+      description: sell.description || '',
+      userId: sell.userId || ''
     }));
-    console.log("Loaded sells:", normalized);
     setSells(normalized);
+    
+    // Load categories from products
+    const loadCategories = async () => {
+      try {
+        const products = await csvService.getProducts();
+        // Extract unique categories
+        const uniqueCategories = [...new Set(products.map(p => p.category))].filter(Boolean);
+        setCategories(uniqueCategories.sort());
+      } catch (error) {
+        console.error("Error loading categories:", error);
+      }
+    };
+    
+    // Load users for selection
+    const loadUsers = () => {
+      try {
+        const allUsers = csvService.getUsers();
+        setUsers(allUsers);
+      } catch (error) {
+        console.error("Error loading users:", error);
+      }
+    };
+    
+    loadCategories();
+    loadUsers();
   }, []);
 
   const handleAddOrEdit = () => {
-    if (!form.name || !form.amount) return alert('All fields are required');
+    if (!form.name || !form.amount) return alert('Name and amount fields are required');
 
     const newSell = {
       id: editingId || Date.now().toString(),
@@ -100,6 +146,14 @@ const AdminSells = () => {
       amount: parseFloat(form.amount),
       type: form.type,
       scope: form.scope,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      minPurchase: form.minPurchase,
+      maxDiscount: form.maxDiscount,
+      usageLimit: form.usageLimit,
+      description: form.description,
+      userId: form.userId,
+      userName: form.userId ? users.find(u => u.id === form.userId)?.name || 'Unknown' : '',
       createdAt: new Date().toISOString()
     };
 
@@ -109,13 +163,37 @@ const AdminSells = () => {
 
     csvService.saveSells(updatedSells);
     setSells(updatedSells);
-    setForm({ name: '', amount: '', type: 'percent', scope: 'category' });
+    setForm({ 
+      name: '', 
+      amount: '', 
+      type: 'percent', 
+      scope: 'category', 
+      startDate: '', 
+      endDate: '', 
+      minPurchase: '', 
+      maxDiscount: '',
+      usageLimit: '',
+      description: '',
+      userId: ''
+    });
     setEditingId(null);
   };
 
   const handleEdit = (sell) => {
     setEditingId(sell.id);
-    setForm({ name: sell.name, amount: sell.amount, type: sell.type, scope: sell.scope });
+    setForm({ 
+      name: sell.name, 
+      amount: sell.amount, 
+      type: sell.type, 
+      scope: sell.scope,
+      startDate: sell.startDate || '',
+      endDate: sell.endDate || '',
+      minPurchase: sell.minPurchase || '',
+      maxDiscount: sell.maxDiscount || '',
+      usageLimit: sell.usageLimit || '',
+      description: sell.description || '',
+      userId: sell.userId || ''
+    });
   };
 
   const handleDelete = (id) => {
@@ -125,64 +203,228 @@ const AdminSells = () => {
     setSells(updated);
   };
 
+  // Find user name by ID
+  const getUserName = (userId) => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.name : 'Unknown';
+  };
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold">Create New Sell</h2>
+    <div className="space-y-6 text-utsa-blue">
+      <h2 className="text-xl text-utsa-blue font-bold mb-4">Create New Sale</h2>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <input
-          className="input"
-          placeholder="Category or Product"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
-        <input
-          className="input"
-          placeholder="Amount"
-          type="number"
-          value={form.amount}
-          onChange={(e) => setForm({ ...form, amount: e.target.value })}
-        />
-        <select
-          className="input"
-          value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value })}
-        >
-          <option value="percent">Percent (%)</option>
-          <option value="fixed">Fixed ($)</option>
-        </select>
-        <select
-          className="input"
-          value={form.scope}
-          onChange={(e) => setForm({ ...form, scope: e.target.value })}
-        >
-          <option value="category">By Category</option>
-          <option value="product">By Product Name</option>
-        </select>
+      <div className="bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Discount Type*</label>
+            <select
+              className="input w-full"
+              value={form.scope}
+              onChange={(e) => setForm({ ...form, scope: e.target.value })}
+            >
+              <option value="category">Category Discount</option>
+              <option value="product">Product Discount</option>
+            </select>
+          </div>
 
-        <button onClick={handleAddOrEdit} className="btn btn-primary">
-          {editingId ? 'Save Changes' : 'Add Sell'}
-        </button>
+          <div className="space-y-2">
+            {form.scope === 'category' ? (
+              <>
+                <label className="block text-sm font-medium">Select Category*</label>
+                <select
+                  className="input w-full"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                >
+                  <option value="">Select a category</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </>
+            ) : (
+              <>
+                <label className="block text-sm font-medium">Product Name*</label>
+                <input
+                  className="input w-full"
+                  placeholder="Enter product name"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Discount Value*</label>
+            <div className="flex">
+              <input
+                className="input w-full rounded-r-none"
+                placeholder="Amount"
+                type="number"
+                min="0"
+                step={form.type === 'percent' ? "1" : "0.01"}
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              />
+              <select
+                className="input rounded-l-none border-l-0 bg-gray-100"
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
+              >
+                <option value="percent">%</option>
+                <option value="fixed">$</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Start Date</label>
+            <input
+              className="input w-full"
+              type="date"
+              value={form.startDate}
+              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Assigned To</label>
+            <select
+              className="input w-full"
+              value={form.userId}
+              onChange={(e) => setForm({ ...form, userId: e.target.value })}
+            >
+              <option value="">Unassigned</option>
+              {users.map(user => (
+                <option key={user.id} value={user.id}>{user.name}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Description</label>
+            <textarea
+              className="input w-full"
+              placeholder="Additional details about this sale"
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              rows="1"
+            />
+          </div>
+          
+          <div className="space-y-2 flex items-end">
+            <button 
+              onClick={handleAddOrEdit} 
+              className="btn btn-primary h-10 w-full flex items-center justify-center"
+            >
+              {editingId ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save Changes
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Sale
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <h3 className="text-lg font-semibold mt-6">Existing Sells</h3>
-      <ul className="space-y-2">
-        {sells.map(sell => (
-          <li
-            key={sell.id}
-            className="p-4 border rounded flex justify-between items-center bg-white shadow"
-          >
-            <div>
-              <strong>{sell.scope === 'category' ? 'Category' : 'Product'}:</strong> {sell.name}<br />
-              <strong>Discount:</strong> {sell.type === 'percent' ? `${sell.amount}% off` : `$${sell.amount} off`}
-            </div>
-            <div className="space-x-2">
-              <button onClick={() => handleEdit(sell)} className="btn btn-secondary text-sm">Edit</button>
-              <button onClick={() => handleDelete(sell.id)} className="btn bg-red-500 text-white text-sm">Delete</button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <h3 className="text-lg font-semibold mt-8 flex items-center">
+        <span>Active Sales</span>
+        <span className="ml-3 bg-utsa-blue text-white text-xs px-2 py-1 rounded-full">{sells.length}</span>
+      </h3>
+      
+      {sells.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+          <p className="text-gray-500">No sales promotions created yet.</p>
+          <p className="text-sm text-gray-400 mt-1">Create your first sale using the form above.</p>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {sells.map(sell => (
+            <li
+              key={sell.id}
+              className="p-4 border rounded bg-white shadow hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <div className="flex items-center">
+                    <span className="inline-block px-2 py-0.5 bg-utsa-blue bg-opacity-10 text-utsa-blue rounded text-xs mr-2">
+                      {sell.scope === 'category' ? 'CATEGORY' : 'PRODUCT'}
+                    </span>
+                    <h4 className="font-semibold text-utsa-blue text-lg">
+                      {sell.name}
+                    </h4>
+                  </div>
+                  <p className="text-lg font-bold text-utsa-orange mt-1">
+                    {sell.type === 'percent' ? `${sell.amount}% off` : `$${sell.amount} off`}
+                  </p>
+                </div>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handleEdit(sell)} 
+                    className="btn btn-secondary text-sm flex items-center h-9 px-3"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(sell.id)} 
+                    className="btn bg-red-500 text-white text-sm flex items-center h-9 px-3"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              </div>
+              
+              {sell.description && (
+                <p className="text-sm text-utsa-blue mb-2 italic">{sell.description}</p>
+              )}
+              
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mt-2 text-gray-600">
+                {sell.startDate && (
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Start: {new Date(sell.startDate).toLocaleDateString()}
+                  </div>
+                )}
+                
+                {sell.userId && (
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Owner: {sell.userName || getUserName(sell.userId)}
+                  </div>
+                )}
+                
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Created: {new Date(sell.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
@@ -209,9 +451,9 @@ const AdminUsers = () => {
   const startEdit = (user) => {
     setEditingUser(user.id);
     setEditForm({
-      name: user.name,
-      email: user.email,
-      isAdmin: updatedData.isAdmin === 'true' || updatedData.isAdmin === true
+      name: user.name || '',
+      email: user.email || '',
+      isAdmin: user.isAdmin === 'true' || user.isAdmin === true
     });
   };
 
@@ -228,8 +470,8 @@ const AdminUsers = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">User Management</h2>
+    <div className="space-y-4 text-utsa-blue">
+      <h2 className="text-xl text-utsa-blue font-semibold">User Management</h2>
 
       <table className="w-full border text-left text-sm">
         <thead className="bg-utsa-blue text-white">
@@ -334,8 +576,8 @@ const AdminOrders = () => {
     });
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Order History</h2>
+    <div className="space-y-6 text-utsa-blue">
+      <h2 className="text-xl text-utsa-blue font-semibold">Order History</h2>
 
       {orders.length === 0 ? (
         <p className="text-gray-600">No orders found.</p>
@@ -363,21 +605,23 @@ const AdminOrders = () => {
                   {order.status}
                 </td>
                 <td className="p-2">{formatDate(order.createdAt)}</td>
-                <td className="p-2 space-x-2">
-                  <button
-                    onClick={() =>  setSelectedOrder(order)}
-                    className="btn btn-secondary text-xs px-2 py-1"
-                  >
-                    View
-                  </button>
-                  {order.status !== 'completed' && order.status !== 'cancelled' && (
+                <td className="p-2">
+                  <div className="flex space-x-2">
                     <button
-                      onClick={() => handleCancel(order.id)}
-                      className="btn bg-red-500 text-white text-xs px-2 py-1"
+                      onClick={() => setSelectedOrder(order)}
+                      className="btn btn-secondary text-xs px-2 py-1"
                     >
-                      Cancel
+                      View
                     </button>
-                  )}
+                    {order.status !== 'completed' && order.status !== 'cancelled' && (
+                      <button
+                        onClick={() => handleCancel(order.id)}
+                        className="btn bg-red-500 text-white text-xs px-2 py-1"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
                   {selectedOrder && (
                     <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
                       <div className="bg-white p-6 rounded-lg shadow-xl max-w-xl w-full relative">
@@ -475,8 +719,8 @@ const AdminQuestions = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold">User Questions</h2>
+    <div className="space-y-6 text-utsa-blue">
+      <h2 className="text-xl text-utsa-blue font-semibold">User Questions</h2>
       
       {questions.length === 0 ? (
         <p className="text-center py-4">No questions submitted yet.</p>
@@ -570,8 +814,8 @@ const AdminDiscounts = () => {
   };
 
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">Create New Discount</h2>
+    <div className="text-utsa-blue">
+      <h2 className="text-lg text-utsa-blue font-semibold mb-4">Create New Discount</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <input 
           type="text" 
@@ -598,12 +842,12 @@ const AdminDiscounts = () => {
       </div>
       <button className="btn btn-primary mb-8" onClick={handleAdd}>Add Discount</button>
 
-      <h2 className="text-lg font-semibold mb-3">Existing Discount Codes</h2>
+      <h2 className="text-lg text-utsa-blue font-semibold mb-3">Existing Discount Codes</h2>
       <div className="space-y-3">
         {discounts.length === 0 ? (
           <p className="text-light-gray">No discount codes created yet.</p>
         ) : discounts.map(discount => (
-          <div key={discount.id} className="flex justify-between items-center border p-4 rounded">
+          <div key={discount.id} className="flex text-utsa-blue justify-between items-center border p-4 rounded">
             <div>
               <p className="font-semibold text-utsa-blue">{discount.code}</p>
               <p className="text-sm">
@@ -668,8 +912,17 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="max-w-6xl mx-auto text-utsa-blue">
+      <h1 className="text-3xl font-bold text-utsa-blue mb-6">Admin Dashboard</h1>
+      
+      {/* Admin info (unchanged) */}
+      <div className="bg-white text-utsa-blue rounded-lg shadow p-6 mb-12">
+        <h2 className="text-xl font-semibold mb-4">Admin Information</h2>
+        <p><strong>Name:</strong> {user.name}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>User ID:</strong> {user.id}</p>
+        <p><strong>Account Created:</strong> {new Date(user.createdAt).toLocaleString()}</p>
+      </div>
 
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b pb-2">
@@ -692,10 +945,10 @@ const AdminPage = () => {
       </div>
 
       {/* System actions (unchanged) */}
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">System Actions</h2>
+      <div className="bg-white text-utsa-blue rounded-lg shadow p-6 mb-8">
+        <h2 className="text-xl text-utsa-blue font-semibold mb-4">System Actions</h2>
         <div className="border-t pt-4">
-          <h3 className="text-lg font-medium mb-2">Reset Application Data</h3>
+          <h3 className="text-lg text-utsa-blue font-medium mb-2">Reset Application Data</h3>
           <p className="text-light-gray mb-4">
             This will delete all existing data and reinitialize the app with sample data.
           </p>
@@ -709,14 +962,7 @@ const AdminPage = () => {
         </div>
       </div>
 
-      {/* Admin info (unchanged) */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">Admin Information</h2>
-        <p><strong>Name:</strong> {user.name}</p>
-        <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>User ID:</strong> {user.id}</p>
-        <p><strong>Account Created:</strong> {new Date(user.createdAt).toLocaleString()}</p>
-      </div>
+      
     </div>
   );
 };
